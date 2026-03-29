@@ -4,8 +4,6 @@
 
 This women safety web application provides real-time emergency response capabilities with location tracking, multi-channel communication (SMS and WhatsApp), and emergency contact workflows.
 
-Duration: 10-day development sprint (March 21-31, 2026)
-
 Status: Production-ready with deployment capabilities
 
 ## Problem Statement
@@ -236,8 +234,4 @@ This project is licensed under the MIT License.
 
 Project Developer: Smruti Priyadarshani Sarangi
 
-Email: [your-email@example.com](mailto:your-email@example.com)
-
-LinkedIn: Your LinkedIn Profile
-
-GitHub: Your GitHub Profile
+Email: smrutisarangi1234@gmail.com

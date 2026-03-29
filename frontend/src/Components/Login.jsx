@@ -1,5 +1,5 @@
 import axios from 'axios';
-import React, { useContext, useState } from 'react';
+import { useState, useContext } from 'react';
 import { useForm } from 'react-hook-form';
 import { FaEye, FaEyeSlash } from 'react-icons/fa';
 import { Config } from '../../API/Config';
@@ -7,19 +7,26 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../Context/AuthContext';
 import api from '../../API/CustomApi';
+import { toast } from 'react-toastify';
+import { useBranding } from '../Context/BrandingContext';
 
 function Login() {
     const [showPassword, setShowPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
-    const { register, handleSubmit } = useForm();
     const [errors, setErrors] = useState("");
+    const { register, handleSubmit, formState: { errors: formErrors, isSubmitting } } = useForm({
+        defaultValues: {
+            email: '',
+            password: ''
+        }
+    });
     const navigate = useNavigate();
-    const {setAuth,setUser, checkAuth} = useContext(AuthContext)
+    const { checkAuth } = useContext(AuthContext)
+    const { brandData } = useBranding()
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
     const Submit = async (data) => {
-        setErrors("");
-        setIsLoading(true);
-      //  console.log(data)
         try {
             const response = await api.post(Config.LOGINUrl, {
                 email: data.email,
@@ -27,12 +34,11 @@ function Login() {
             });
             if (response) {
                 await checkAuth()
+                toast.success('Login successful!', { position: 'top-right' })
                 navigate("/HomePage")
             }
         } catch (error) {
-            setErrors(error.response?.data?.message || error.message);
-        } finally {
-            setIsLoading(false);
+            toast.error(error.response?.data?.message || 'Login failed. Please try again.', { position: 'top-right' });
         }
     };
 
@@ -82,22 +88,30 @@ function Login() {
     });
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
             <div className="w-full max-w-md">
                 {/* Logo Section */}
-                <div className="mb-8 text-center">
-                    <img className="h-12 mx-auto mb-4" src="/logo.svg" alt="Logo" />
-                    <h1 className="text-2xl font-bold text-black mb-2">Welcome Back!</h1>
-                    <p className="text-gray-600">Please enter your details to sign in</p>
+                <div className="mb-8 text-center fade-in">
+                    {brandData.logo.image ? (
+                        <div className="mx-auto mb-4 inline-flex rounded-2xl border border-white/70 bg-white/80 px-3 py-2 shadow-md">
+                            <img className="h-14 w-auto object-contain md:h-16" src={brandData.logo.image} alt={`${brandData.name} Logo`} />
+                        </div>
+                    ) : (
+                        <h2 className="mx-auto mb-4 inline-block rounded-2xl border border-white/70 bg-white/80 px-4 py-2 text-2xl font-black text-gray-900 shadow-md">
+                            {brandData.name}
+                        </h2>
+                    )}
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome Back</h1>
+                    <p className="text-gray-600 text-sm">Sign in to access your safety network</p>
                 </div>
 
                 {/* Login Form */}
-                <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-lg border-2 border-dotted border-black p-6 space-y-6">
+                <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-xl shadow-lg p-8 space-y-6 slide-up">
                     {/* Google Login Button */}
                     <button
                         type="button"
-                        disabled={isLoading}
-                        className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-gray-200 hover:bg-gray-50 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+                        disabled={isSubmitting}
+                        className="w-full flex items-center justify-center gap-3 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-gray-700"
                         onClick={() => handleGoogleLogin()}
                     >
                         <img
@@ -105,54 +119,49 @@ function Login() {
                             alt="Google logo"
                             className="w-5 h-5"
                         />
-                        Sign in with Google
+                        Continue with Google
                     </button>
 
                     <div className="relative flex py-3 items-center">
                         <div className="flex-grow border-t border-gray-200"></div>
-                        <span className="flex-shrink mx-4 text-gray-400">or</span>
+                        <span className="flex-shrink mx-4 text-gray-400 text-sm">or email</span>
                         <div className="flex-grow border-t border-gray-200"></div>
                     </div>
 
                     {/* Email Field */}
                     <div>
-                        <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-                            Email Address
+                        <label htmlFor="email" className="block text-sm font-semibold text-gray-800 mb-2">
+                            Email Address *
                         </label>
                         <input
                             type="email"
                             id="email"
-                            name="email"
                             {...register("email", {
-                                required: true,
-                                pattern: {
-                                    value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                    message: "invalid email address"
-                                }
+                                required: 'Email is required',
+                                pattern: { value: emailRegex, message: 'Please enter a valid email address' }
                             })}
-                            className={`w-full px-4 py-2 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
+                            className={`w-full px-4 py-2 rounded-lg border transition-colors ${formErrors.email ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-blue-200'} focus:outline-none focus:border-blue-500`}
                             placeholder="Enter your email"
                         />
-                        {errors.email && (
-                            <p className="mt-1 text-sm text-red-500">{errors.email}</p>
+                        {formErrors.email && (
+                            <p className="mt-1 text-sm text-red-500">{formErrors.email.message}</p>
                         )}
                     </div>
 
                     {/* Password Field */}
                     <div>
                         <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-                            Password
+                            Password *
                         </label>
                         <div className="relative">
                             <input
                                 type={showPassword ? 'text' : 'password'}
                                 id="password"
-                                name="password"
                                 {...register("password", {
-                                    required: true,
-                                    maxLength: 20
+                                    required: 'Password is required',
+                                    minLength: { value: 6, message: 'Password must be at least 6 characters' }
                                 })}
-                                className={`w-full px-4 py-2 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
+                                className={`w-full px-4 py-2 rounded-lg border transition-colors ${formErrors.password ? 'border-red-500 focus:ring-2 focus:ring-red-200' : 'border-gray-300 focus:ring-2 focus:ring-blue-200'} focus:outline-none focus:border-blue-500`}
                                 placeholder="Enter your password"
                             />
                             <button
@@ -163,8 +172,8 @@ function Login() {
                                 {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                             </button>
                         </div>
-                        {errors && (
-                            <p className="mt-1 text-sm text-red-500">{errors}</p>
+                        {formErrors.password && (
+                            <p className="mt-1 text-sm text-red-500">{formErrors.password.message}</p>
                         )}
                     </div>
 
@@ -188,10 +197,10 @@ function Login() {
                     {/* Submit Button */}
                     <button
                         type="submit"
-                        disabled={isLoading}
+                        disabled={isSubmitting}
                         className="w-full bg-black text-white rounded-lg py-2.5 font-semibold hover:bg-gray-800 transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        {isLoading ? 'Signing in...' : 'Sign In'}
+                        {isSubmitting ? 'Signing in...' : 'Sign In'}
                     </button>
 
                     {/* Sign Up Link */}

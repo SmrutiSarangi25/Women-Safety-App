@@ -72,6 +72,32 @@ const UserSchema = mongoose.Schema({
         type: [ContactSchema],
         default: []
     },
+    emergencyContacts: [{
+        name: {
+            type: String,
+            required: true
+        },
+        phone: {
+            type: String,
+            required: true
+        },
+        email: String,
+        notificationMethods: {
+            type: [String],
+            enum: ['sms', 'email', 'whatsapp'],
+            default: ['sms']
+        },
+        createdAt: {
+            type: Date,
+            default: Date.now
+        }
+    }],
+    status: {
+        type: String,
+        enum: ['active', 'suspended', 'deleted'],
+        default: 'active'
+    },
+    suspensionReason: String,
     googleId: {
         type: String,
         sparse: true
@@ -83,9 +109,6 @@ const UserSchema = mongoose.Schema({
 }, {
     timestamps: true
 });
-
-
-UserSchema.index({ googleId: 1 }, { sparse: true });
 
 const User = mongoose.model("User", UserSchema);
 

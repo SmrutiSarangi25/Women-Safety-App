@@ -33,7 +33,7 @@ const AddProfilePhoto = async (req, res) => {
             });
         } else {
             console.warn("No file provided, using default photo.");
-            photo = "https://via.placeholder.com/150";  L
+            photo = "https://via.placeholder.com/150";
         }
 
         

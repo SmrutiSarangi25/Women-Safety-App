@@ -1,5 +1,5 @@
-import { Home, Map, MessageSquare, User, Edit, LogOut, Star, Settings, Luggage, Camera, X } from 'lucide-react'
-import { Link, useNavigate } from 'react-router-dom'
+import { LogOut, Settings, Camera, X } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import BottomNav from './Home/BottomNav'
 import { useContext, useState } from 'react'

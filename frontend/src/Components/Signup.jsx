@@ -7,48 +7,48 @@ import { useGoogleLogin } from "@react-oauth/google";
 import { AuthContext } from '../Context/AuthContext';
 import { Link, useNavigate } from 'react-router-dom';
 import api from '../../API/CustomApi';
-
-
+import { toast } from 'react-toastify';
 
 function Signup() {
     const [showPassword, setShowPassword] = useState(false);
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [password, setPassword] = useState("");
     const [isLoading, setIsLoading] = useState(false);
-    const { register, handleSubmit, formState: { errors: formErrors } } = useForm();
-    const [errors, setErrors] = useState("");
+    const { register, handleSubmit, formState: { errors: formErrors }, watch } = useForm({
+        mode: 'onBlur',
+        defaultValues: {
+            userName: '',
+            email: '',
+            password: '',
+            confirmPassword: '',
+            agreeToTerms: false
+        }
+    });
+    const [globalError, setGlobalError] = useState("");
     const { setAuth, setUser, checkAuth } = useContext(AuthContext);
     const navigate = useNavigate();
+    const passwordValue = watch('password');
 
     const Submit = async (data) => {
-        setErrors("");
+        setGlobalError("");
+        
         try {
-            if (data.password !== password) {
-                setErrors("Password Doesn't match");
-                return;
-            }
-
-            if (!data.agreeToTerms) {
-                setErrors("Please agree to the Terms and Privacy Policy");
-                return;
-            }
-
             setIsLoading(true);
-            const response = await axios.post(Config.SignUPUrl,
-                {
-                    username: data.userName,
-                    email: data.email,
-                    password: data.password
-                }
-
-            );
+            const response = await api.post(Config.SignUPUrl, {
+                username: data.userName,
+                email: data.email,
+                password: data.password
+            });
 
             if (response.data) {
-                await checkAuth()
+                toast.success("Account created successfully! Redirecting...");
+                await checkAuth();
                 navigate("/HomePage");
             }
         } catch (error) {
-            setErrors(error.response?.data?.message || "Signup failed. Please try again.");
+            const errorMsg = error.response?.data?.message || "Signup failed. Please try again.";
+            setGlobalError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -80,11 +80,14 @@ function Signup() {
             );
 
             if (response.data) {
-                await checkAuth()
+                toast.success("Signup successful! Redirecting...");
+                await checkAuth();
                 navigate("/HomePage");
             }
         } catch (error) {
-            setErrors("Google signup failed: " + (error.response?.data?.message || "Please try again"));
+            const errorMsg = "Google signup failed: " + (error.response?.data?.message || "Please try again");
+            setGlobalError(errorMsg);
+            toast.error(errorMsg);
         } finally {
             setIsLoading(false);
         }
@@ -93,28 +96,29 @@ function Signup() {
     const handleGoogleSignup = useGoogleLogin({
         onSuccess: handleGoogleSuccess,
         onError: (error) => {
-            console.error("Google login error:", error);
-            setErrors("Google signup failed. Please try again.");
+            const errorMsg = "Google signup failed. Please try again.";
+            setGlobalError(errorMsg);
+            toast.error(errorMsg);
         }
     });
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-white to-gray-100 p-4">
+        <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
             <div className="w-full max-w-md">
                 {/* Logo Section */}
-                <div className="mb-8 text-center">
-                    <img className="h-12 mx-auto mb-4" src="/logo.svg" alt="Logo" />
-                    <h1 className="text-2xl font-bold text-black mb-2">Create an Account</h1>
-                    <p className="text-gray-600">Join us to stay safe and connected</p>
+                <div className="mb-8 text-center fade-in">
+                    <img className="h-14 mx-auto mb-4" src="https://static.wixstatic.com/media/a3633f_5048dd41d66548db8295037eeb4daf54~mv2.png/v1/crop/x_0,y_0,w_1690,h_1049/fill/w_49,h_30,al_c,q_85,usm_0.66_1.00_0.01,blur_2,enc_avif,quality_auto/Group%2048095920.png" alt="Raksha Logo" />
+                    <h1 className="text-3xl font-bold text-gray-900 mb-2">Create Account</h1>
+                    <p className="text-gray-600 text-sm">Join our safety community today</p>
                 </div>
 
                 {/* Signup Form */}
-                <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-lg border-2 border-dotted border-black p-6 space-y-4">
+                <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-xl shadow-lg p-8 space-y-6 slide-up">
                     {/* Google Sign Up Button */}
                     <button
                         type="button"
                         disabled={isLoading}
-                        className={`w-full flex items-center justify-center gap-2 py-2.5 border-2 border-gray-200 hover:bg-gray-50 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                        className={`w-full flex items-center justify-center gap-3 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-primary transition-all duration-300 font-semibold text-gray-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
                             }`}
                         onClick={() => handleGoogleSignup()}
                     >
@@ -126,9 +130,9 @@ function Signup() {
                         {isLoading ? 'Loading...' : 'Sign up with Google'}
                     </button>
 
-                    {errors && (
-                        <div className="text-red-500 text-sm text-center">
-                            {errors}
+                    {globalError && (
+                        <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 text-center">
+                            {globalError}
                         </div>
                     )}
 
@@ -139,20 +143,24 @@ function Signup() {
                     </div>
 
                     <div className='w-full'>
-                        <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-1">
+                        <label htmlFor="userName" className="block text-sm font-semibold text-gray-700 mb-1">
                             User Name
                         </label>
                         <input
                             type="text"
                             id="userName"
-                            name="userName"
-                            className={`w-full px-3 py-2 rounded-lg border ${errors.userName ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
+                            className={`w-full px-3 py-2 rounded-lg border ${formErrors.userName ? 'border-red-500 bg-red-50' : 'border-gray-300'} focus:outline-none focus:border-brand-primary transition-colors duration-300`}
                             {...register("userName", {
-                                required: "Username is Required",
-                                maxLength: 20
+                                required: "Username is required",
+                                minLength: { value: 3, message: "Username must be at least 3 characters" },
+                                maxLength: { value: 20, message: "Username must not exceed 20 characters" },
+                                pattern: { value: /^[a-zA-Z0-9_-]+$/, message: "Username can only contain letters, numbers, underscores, and hyphens" }
                             })}
-                            placeholder="Enter Your Username"
+                            placeholder="Enter your username"
                         />
+                        {formErrors.userName && (
+                            <p className="mt-1 text-sm text-red-500">{formErrors.userName.message}</p>
+                        )}
                     </div>
 
                     {/* Email Field */}
@@ -163,17 +171,19 @@ function Signup() {
                         <input
                             type="email"
                             id="email"
-                            name="email"
-                            className={`w-full px-3 py-2 rounded-lg border ${errors.email ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
-                            placeholder="john.doe@example.com"
+                            className={`w-full px-3 py-2 rounded-lg border ${formErrors.email ? 'border-red-500 bg-red-50' : 'border-gray-300'} focus:outline-none focus:border-brand-primary transition-colors duration-300`}
                             {...register("email", {
-                                required: true,
+                                required: "Email is required",
                                 pattern: {
                                     value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                                    message: "invalid email address"
+                                    message: "Invalid email address"
                                 }
                             })}
+                            placeholder="you@example.com"
                         />
+                        {formErrors.email && (
+                            <p className="mt-1 text-sm text-red-500">{formErrors.email.message}</p>
+                        )}
                     </div>
 
                     <div className="space-y-4">
@@ -185,13 +195,20 @@ function Signup() {
                                 <input
                                     type={showPassword ? 'text' : 'password'}
                                     id="password"
-                                    name="password"
-                                    className={`w-full px-3 py-2 rounded-lg border ${errors.password ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
-                                    placeholder="••••••••"
+                                    className={`w-full px-3 py-2 rounded-lg border ${formErrors.password ? 'border-red-500 bg-red-50' : 'border-gray-300'} focus:outline-none focus:border-brand-primary transition-colors duration-300`}
                                     {...register("password", {
-                                        required: true,
-                                        maxLength: 20
+                                        required: "Password is required",
+                                        minLength: { 
+                                            value: 8, 
+                                            message: "Password must be at least 8 characters" 
+                                        },
+                                        validate: {
+                                            hasUpperCase: (value) => /[A-Z]/.test(value) || "Password must contain at least one uppercase letter",
+                                            hasNumber: (value) => /[0-9]/.test(value) || "Password must contain at least one number",
+                                            hasSpecialChar: (value) => /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(value) || "Password must contain at least one special character"
+                                        }
                                     })}
+                                    placeholder="Min 8 chars, 1 uppercase, 1 number, 1 special char"
                                 />
                                 <button
                                     type="button"
@@ -201,6 +218,9 @@ function Signup() {
                                     {showPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                                 </button>
                             </div>
+                            {formErrors.password && (
+                                <p className="mt-1 text-sm text-red-500">{formErrors.password.message}</p>
+                            )}
                         </div>
 
                         {/* Confirm Password */}
@@ -212,11 +232,12 @@ function Signup() {
                                 <input
                                     type={showConfirmPassword ? 'text' : 'password'}
                                     id="confirmPassword"
-                                    name="confirmPassword"
-                                    value={password}
-                                    onChange={(e) => setPassword(e.target.value)}
-                                    className={`w-full px-3 py-2 rounded-lg border ${errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} focus:outline-none focus:border-black transition-colors duration-300`}
-                                    placeholder="••••••••"
+                                    className={`w-full px-3 py-2 rounded-lg border ${formErrors.confirmPassword ? 'border-red-500 bg-red-50' : 'border-gray-300'} focus:outline-none focus:border-brand-primary transition-colors duration-300`}
+                                    {...register("confirmPassword", {
+                                        required: "Please confirm your password",
+                                        validate: (value) => value === passwordValue || "Passwords do not match"
+                                    })}
+                                    placeholder="Re-enter your password"
                                 />
                                 <button
                                     type="button"
@@ -226,8 +247,8 @@ function Signup() {
                                     {showConfirmPassword ? <FaEyeSlash size={20} /> : <FaEye size={20} />}
                                 </button>
                             </div>
-                            {errors && (
-                                <p className="mt-1 text-sm text-red-500">{errors}</p>
+                            {formErrors.confirmPassword && (
+                                <p className="mt-1 text-sm text-red-500">{formErrors.confirmPassword.message}</p>
                             )}
                         </div>
                     </div>
@@ -250,8 +271,8 @@ function Signup() {
                             <a href="/privacy" className="text-black hover:underline">Privacy Policy</a>
                         </label>
                     </div>
-                    {errors.agreeToTerms && (
-                        <p className="text-sm text-red-500">{errors.agreeToTerms}</p>
+                    {formErrors.agreeToTerms && (
+                        <p className="text-sm text-red-500">{formErrors.agreeToTerms.message}</p>
                     )}
 
                     <button

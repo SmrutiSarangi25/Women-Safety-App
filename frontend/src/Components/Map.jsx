@@ -1,4 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
+import api from "../../API/CustomApi";
+import { Config } from "../../API/Config";
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
 import L from "leaflet";
@@ -16,7 +18,7 @@ L.Icon.Default.mergeOptions({
 const TrackMeMap = () => {
   const [currentPosition, setCurrentPosition] = useState([19.0760, 72.8777]); // Initial location
   const [isTracking, setIsTracking] = useState(false);
-  const [watchId, setWatchId] = useState(null);
+  const [intervalId, setIntervalId] = useState(null);
   const mapRef = useRef(null);
 
   const getIPBasedLocation = async () => {
@@ -85,32 +87,53 @@ const TrackMeMap = () => {
   };
 
   const handleTrackMe = async () => {
-
     if (!isTracking) {
-      const location = await getLocation()
-      const newLocation = [location.latitude, location.longitude]
-      setCurrentPosition(newLocation);
-      if (mapRef.current) {
-        mapRef.current.setView(newLocation, 15);
-      }
+      // Start real-time tracking
+      const sendLocation = async () => {
+        try {
+          const location = await getLocation();
+          const newLocation = [location.latitude, location.longitude];
+          setCurrentPosition(newLocation);
+          if (mapRef.current) {
+            mapRef.current.setView(newLocation, 15);
+          }
+          await api.post(Config.LOCATION_SHARE_URL, {
+            latitude: location.latitude,
+            longitude: location.longitude,
+            accuracy: location.accuracy,
+            timestamp: new Date(),
+          });
+        } catch (err) {
+          console.error("Failed to share location:", err);
+        }
+      };
+      await sendLocation(); // Send immediately
+      const id = setInterval(sendLocation, 10000); // Send every 10 seconds
+      setIntervalId(id);
       setIsTracking(true);
     } else {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
+      // Stop real-time tracking
+      if (intervalId) {
+        clearInterval(intervalId);
+        setIntervalId(null);
+      }
+      try {
+        await api.post(Config.LOCATION_STOP_SHARING_URL);
+      } catch (err) {
+        console.error("Failed to stop sharing location:", err);
       }
       setIsTracking(false);
-      setWatchId(null);
     }
   };
 
   // Cleanup effect
   useEffect(() => {
     return () => {
-      if (watchId) {
-        navigator.geolocation.clearWatch(watchId);
+      if (intervalId) {
+        clearInterval(intervalId);
       }
     };
-  }, [watchId]);
+  }, [intervalId]);
 
   return (
     <div className="flex flex-col h-[calc(100vh-76px)] relative">

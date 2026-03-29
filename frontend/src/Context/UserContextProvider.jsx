@@ -7,7 +7,18 @@ const UserContextProvider = ({ children }) => {
     const [auth, setAuth] = useState(false);
     const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [userEmail, setUserEmail] = useState("");
+    const [isAdmin, setIsAdmin] = useState(false);
+
+    useEffect(() => {
+        const cachedUser = localStorage.getItem("UserInfo");
+        if (cachedUser) {
+            try {
+                setUser(JSON.parse(cachedUser));
+            } catch {
+                localStorage.removeItem("UserInfo");
+            }
+        }
+    }, []);
 
     const getUserInfo = async (email) => {
         try {
@@ -31,19 +42,29 @@ const UserContextProvider = ({ children }) => {
 
             if (response.data.authenticated) {
                 const email = response.data.user.email;
-                setUserEmail(email);
 
                 await getUserInfo(email);
                 setAuth(true);
+                await checkAdminStatus();
             } else {
                 await logout()
             }
         } catch (error) {
             console.error("Authentication check failed:", error);
             setAuth(false);
+            setIsAdmin(false);
             setUser(null);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const checkAdminStatus = async () => {
+        try {
+            await api.get(Config.ADMIN_PROFILE_URL);
+            setIsAdmin(true);
+        } catch {
+            setIsAdmin(false);
         }
     };
 
@@ -58,6 +79,7 @@ const UserContextProvider = ({ children }) => {
             if (response) {
                 localStorage.clear();
                 setAuth(false);
+                setIsAdmin(false);
                 setUser(null);
 
                 console.log("Logged out successfully.");
@@ -68,7 +90,7 @@ const UserContextProvider = ({ children }) => {
     };
 
     return (
-        <AuthProvider value={{ auth, setAuth, user, setUser, logout, loading, checkAuth }}>
+        <AuthProvider value={{ auth, setAuth, user, setUser, logout, loading, checkAuth, isAdmin }}>
             {children}
         </AuthProvider>
     );

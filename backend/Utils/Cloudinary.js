@@ -22,4 +22,24 @@ async function cloudinaryUpload(filePath) {
   }
 }
 
-export { cloudinaryUpload };
+async function cloudinaryUploadResource(filePath, options = {}) {
+  try {
+    const result = await cloudinary.uploader.upload(filePath, {
+      folder: options.folder || 'GeneralUploads',
+      resource_type: options.resourceType || 'auto'
+    })
+
+    return {
+      secureUrl: result.secure_url,
+      publicId: result.public_id,
+      resourceType: result.resource_type,
+      bytes: result.bytes,
+      format: result.format
+    }
+  } catch (error) {
+    console.error('Cloudinary resource upload error:', error)
+    throw error
+  }
+}
+
+export { cloudinaryUpload, cloudinaryUploadResource };

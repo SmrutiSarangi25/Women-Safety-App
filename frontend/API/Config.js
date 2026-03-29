@@ -10,7 +10,7 @@ export const Config = {
   ADMIN_BASE_URL: ADMIN_BASE,
   SignUPUrl: import.meta.env.VITE_SIGNUP_URL || `${API_BASE}/api/user/signup`,
   LOGINUrl: import.meta.env.VITE_LOGIN_URL || `${API_BASE}/api/user/login`,
-  GoogleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || "748627875694-hqpvo0akdcvtgjpvqluoap2dm3bafbia.apps.googleusercontent.com",
+  GoogleClientId: import.meta.env.VITE_GOOGLE_CLIENT_ID || "",
   GoogleSignUpUrl: import.meta.env.VITE_GOOGLELOGIN_URL || `${API_BASE}/api/user/googleLogin`,
   LogoutUrl: import.meta.env.VITE_LOGOUT_URL || `${API_BASE}/api/user/logout`,
   ContactUrl: import.meta.env.VITE_ADDCONTACT_URL || `${API_BASE}/api/contacts/addcontact`,

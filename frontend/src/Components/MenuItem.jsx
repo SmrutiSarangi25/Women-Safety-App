@@ -1,5 +1,6 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { ChevronRight, Save, Loader } from "lucide-react"
+import PropTypes from 'prop-types'
 
 const MenuItem = ({ 
     icon: Icon, 
@@ -8,7 +9,7 @@ const MenuItem = ({
     initialValue = "", 
     isLoading = false,
     error = "",
-    validation = (value) => ""  
+    validation = () => ""  
 }) => {
     const [value, setValue] = useState(initialValue)
     const [isEditing, setIsEditing] = useState(false)
@@ -89,6 +90,16 @@ const MenuItem = ({
             )}
         </div>
     )
+}
+
+MenuItem.propTypes = {
+    icon: PropTypes.elementType.isRequired,
+    label: PropTypes.string.isRequired,
+    onUpdate: PropTypes.func.isRequired,
+    initialValue: PropTypes.string,
+    isLoading: PropTypes.bool,
+    error: PropTypes.string,
+    validation: PropTypes.func,
 }
 
 export default MenuItem

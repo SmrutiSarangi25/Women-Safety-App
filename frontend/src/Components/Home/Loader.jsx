@@ -1,13 +1,16 @@
 import React from 'react';
 
 function Loader() {
-    return (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black bg-opacity-40">
-            <div className="w-20 h-20 border-4 border-transparent border-t-blue-400 animate-spin rounded-full flex items-center justify-center">
-                <div className="w-16 h-16 border-4 border-transparent border-t-red-400 animate-spin rounded-full"></div>
-            </div>
-        </div>
-    );
+  return (
+    <div className="flex flex-col items-center gap-3 rounded-xl bg-white px-6 py-5 shadow-lg">
+      <div
+        className="h-10 w-10 animate-spin rounded-full border-4 border-red-200 border-t-red-600"
+        role="status"
+        aria-label="Loading"
+      />
+      <p className="text-sm font-medium text-gray-700">Please wait...</p>
+    </div>
+  );
 }
 
 export default Loader;

@@ -1,47 +1,85 @@
 import React from 'react'
 import { FaInstagram, FaFacebook, FaLinkedin, FaTwitter } from "react-icons/fa";
+import { useBranding } from '../Context/BrandingContext'
 
 function Footer() {
+  const { brandData } = useBranding()
+  
   return (
-    <footer className='w-full p-4 bg-black text-white rounded-lg mt-auto'>
-      <div className='w-full h-fit'>
-        <div className='w-full p-2'>
-          <img className='h-8' src="/logo.svg" alt="Logo" />
-          <h1 className='font-[300] text-[15px] md:text-[20px] md:font-normal md:w-[60%] mt-4'>
-          Empowering Women with Advanced Safety Technology - Your Personal Guardian That Never Sleeps, Ensuring Youre Protected Wherever Life Takes You
-          </h1>
+    <footer className='w-full bg-gradient-to-b from-gray-900 to-gray-950 text-gray-100'>      
+      <div className='max-w-7xl mx-auto px-4 py-16'>
+        {/* Top Section */}
+        <div className='grid grid-cols-1 md:grid-cols-4 gap-12 mb-12'>
+          {/* Brand Column */}
+          <div>
+            {brandData.logo.image ? (
+              <div className='mb-4 inline-flex rounded-xl border border-white/10 bg-white/5 px-2 py-1 shadow-lg'>
+                <img className='h-14 w-auto object-contain drop-shadow-md' src={brandData.logo.image} alt={brandData.name} />
+              </div>
+            ) : (
+              <h3 className='text-2xl font-bold brand-primary mb-4'>{brandData.name}</h3>
+            )}
+            <p className='text-gray-400 text-sm leading-relaxed'>
+              Empowering women with advanced safety technology. Your personal guardian that never sleeps.
+            </p>
+            {/* Social Links */}
+            <div className='flex gap-4 mt-6'>
+              <a href="#" className='text-gray-400 hover:text-brand-primary transition-colors'>
+                <FaInstagram size={20} />
+              </a>
+              <a href="#" className='text-gray-400 hover:text-brand-primary transition-colors'>
+                <FaFacebook size={20} />
+              </a>
+              <a href="#" className='text-gray-400 hover:text-brand-primary transition-colors'>
+                <FaLinkedin size={20} />
+              </a>
+              <a href="#" className='text-gray-400 hover:text-brand-primary transition-colors'>
+                <FaTwitter size={20} />
+              </a>
+            </div>
+          </div>
+
+          {/* Product Column */}
+          <div>
+            <h4 className='text-white font-semibold mb-4 text-sm uppercase tracking-wide'>Product</h4>
+            <ul className='space-y-2'>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Features</a></li>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Pricing</a></li>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Security</a></li>
+              <li><a href="/faq" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>FAQ</a></li>
+            </ul>
+          </div>
+
+          {/* Company Column */}
+          <div>
+            <h4 className='text-white font-semibold mb-4 text-sm uppercase tracking-wide'>Company</h4>
+            <ul className='space-y-2'>
+              <li><a href="/about" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>About</a></li>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Careers</a></li>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Contact</a></li>
+            </ul>
+          </div>
+
+          {/* Legal Column */}
+          <div>
+            <h4 className='text-white font-semibold mb-4 text-sm uppercase tracking-wide'>Legal</h4>
+            <ul className='space-y-2'>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Privacy Policy</a></li>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Terms of Service</a></li>
+              <li><a href="#" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>Disclaimer</a></li>
+              <li><a href="mailto:support@raksha.app" className='text-gray-400 hover:text-brand-primary transition-colors text-sm'>support@raksha.app</a></li>
+            </ul>
+          </div>
         </div>
-      </div>
-      <div className='w-full p-2 flex flex-col md:flex-row md:gap-6'>
-        <a className='text-gray-400 font-sans font-bold hover:text-white transition-colors duration-300' href="/testimonials">Testimonials</a>
-        <a className='text-gray-400 font-sans font-bold hover:text-white transition-colors duration-300' href="/contactus">Contact Us</a>
-      </div>
-      <div className='w-full p-2 flex items-center justify-between md:w-[40%]'>
-        <input 
-          type="text" 
-          className='w-[55%] border-2 border-white rounded-xl p-2 bg-black font-sans text-sm font-semibold focus:outline-none focus:border-gray-300' 
-          placeholder='Subscribe to Our Newsletter' 
-        />
-        <button className='p-2 rounded-xl bg-white text-black w-[40%] font-semibold hover:bg-gray-200 transition-colors duration-300'>
-          Subscribe
-        </button>
-      </div>
-      <div className='w-full p-2 md:w-[15%] md:mt-2'>
-        <h1 className='font-[300] text-center font-sm tracking-tighter'>Connect with us</h1>
-        <div className='w-full p-2 flex items-center justify-center gap-4'>
-          <FaInstagram className='w-5 h-5 md:w-7 md:h-7 hover:text-gray-400 cursor-pointer transition-colors duration-300' />
-          <FaFacebook className='w-5 h-5 md:w-7 md:h-7 hover:text-gray-400 cursor-pointer transition-colors duration-300' />
-          <FaLinkedin className='w-5 h-5 md:w-7 md:h-7 hover:text-gray-400 cursor-pointer transition-colors duration-300' />
-          <FaTwitter className='w-5 h-5 md:w-7 md:h-7 hover:text-gray-400 cursor-pointer transition-colors duration-300' />
+
+        {/* Divider */}
+        <div className='border-t border-gray-700 py-8'></div>
+
+        {/* Bottom Section */}
+        <div className='flex flex-col md:flex-row justify-between items-center text-sm text-gray-400'>
+          <p className='mb-4 md:mb-0'>© 2026 {brandData.name}. All rights reserved.</p>
+          <p>Protecting women. Empowering safety. Building trust.</p>
         </div>
-      </div>
-      <div className='w-full p-1 bg-white text-black rounded-lg flex items-center justify-between flex-col md:flex-row md:p-3 mt-4'>
-        <div className='flex items-center justify-between gap-4'>
-          <h3 className='text-[12px] font-[400] font-sans hover:text-gray-600 cursor-pointer'>Terms of Service</h3>
-          <h3 className='text-[12px] font-[400] font-sans hover:text-gray-600 cursor-pointer'>Privacy Policy</h3>
-          <h3 className='text-[12px] font-[400] font-sans hover:text-gray-600 cursor-pointer'>Disclaimer Policy</h3>
-        </div>
-        <p className='text-[12px] font-[400] font-sans mt-2 md:mt-0'>Copyright © 2024 I'M SAFE APP. All rights reserved</p>
       </div>
     </footer>
   )

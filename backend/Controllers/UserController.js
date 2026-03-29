@@ -6,6 +6,16 @@ import jwt from "jsonwebtoken";
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
+const getCookieOptions = () => {
+  const isProd = process.env.NODE_ENV === 'production';
+  return {
+    httpOnly: true,
+    secure: isProd,
+    sameSite: isProd ? 'none' : 'lax',
+    maxAge: 30 * 24 * 60 * 60 * 1000
+  };
+};
+
 const Signup = async (req, res) => {
   const { username, email, password } = req.body;
 
@@ -32,15 +42,11 @@ const Signup = async (req, res) => {
       await NewUser.save();
 
       const token = CreateToken(NewUser._id);
-      res.cookie("jwt", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "none"
-      })
+      res.cookie("jwt", token, getCookieOptions())
         .status(200).json({
           _id: NewUser._id,
           email: NewUser.email,
+          username: NewUser.username,
           profilephoto: NewUser.profilePhoto,
           reviews: NewUser.reviews,
           contacts: NewUser.contacts
@@ -62,17 +68,12 @@ const Login = async (req, res) => {
     const comparePassword = await bcrypt.compare(password, exitsEmail.password);
     if (comparePassword) {
       const token = CreateToken(exitsEmail._id);
-      // console.log(token)
 
-      res.cookie("jwt", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "none"
-      })
+      res.cookie("jwt", token, getCookieOptions())
         .status(200).json({
           _id: exitsEmail._id,
           email: exitsEmail.email,
+          username: exitsEmail.username,
           profilephoto: exitsEmail.profilePhoto,
           reviews: exitsEmail.reviews,
           contacts: exitsEmail.contacts
@@ -86,9 +87,10 @@ const Login = async (req, res) => {
 const Logout = async (req, res) => {
   try {
     res.cookie("jwt", "", {
-      expiresIn: new Date(0),
-      sameSite: "none",
-      secure: true
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+      expires: new Date(0)
     }).json({ message: "Logout Successfully" });
   } catch (error) {
     res.status(400).json({ message: "Logout Unsuccessful" });
@@ -119,14 +121,10 @@ const GoogleAuthController = async (req, res) => {
 
       const token = CreateToken(existingUser._id);
 
-      return res.cookie("jwt", token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV,
-        maxAge: 30 * 24 * 60 * 60 * 1000,
-        sameSite: "none"
-      }).status(200).json({
+      return res.cookie("jwt", token, getCookieOptions()).status(200).json({
         _id: existingUser._id,
         email: existingUser.email,
+        username: existingUser.username,
         profilephoto: existingUser.profilePhoto,
         reviews: existingUser.reviews,
         contacts: existingUser.contacts
@@ -147,14 +145,10 @@ const GoogleAuthController = async (req, res) => {
 
     const token = CreateToken(newUser._id);
 
-    res.cookie("jwt", token, {
-      httpOnly: true,
-      secure: process.env.NODE_ENV,
-      maxAge: 30 * 24 * 60 * 60 * 1000,
-      sameSite: "none"
-    }).status(200).json({
+    res.cookie("jwt", token, getCookieOptions()).status(200).json({
       _id: newUser._id,
       email: newUser.email,
+      username: newUser.username,
       profilephoto: newUser.profilePhoto,
       reviews: newUser.reviews,
       contacts: newUser.contacts

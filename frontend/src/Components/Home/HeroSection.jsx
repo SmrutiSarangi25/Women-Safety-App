@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Shield, AlertCircle, MapPin, ArrowRight, Zap, Mic, Square, RotateCcw, Trash2, AudioLines } from 'lucide-react'
+import { Shield, AlertCircle, MapPin, ArrowRight, Zap, Mic, Square, RotateCcw, Trash2, AudioLines, Volume2, Music, Waveform } from 'lucide-react'
 import { useBranding } from '../../Context/BrandingContext'
 import { Link } from 'react-router-dom'
 import api from '../../../API/CustomApi'
@@ -24,6 +24,9 @@ function HeroSection() {
     const [errorMessage, setErrorMessage] = useState('')
     const [isSubmittingSOS, setIsSubmittingSOS] = useState(false)
     const [supportInfo, setSupportInfo] = useState({ hasRecorder: false, hasSpeechRecognition: false, hasMediaDevices: false })
+    const [recordingTime, setRecordingTime] = useState(0)
+    const [isPlaying, setIsPlaying] = useState(false)
+    const [recordingQuality, setRecordingQuality] = useState(0)
     const recorderRef = useRef(null)
     const recognitionRef = useRef(null)
     const streamRef = useRef(null)
@@ -31,6 +34,8 @@ function HeroSection() {
     const voiceStatusRef = useRef('idle')
     const transcriptRef = useRef('')
     const audioUrlRef = useRef('')
+    const timerIntervalRef = useRef(null)
+    const audioPlayRef = useRef(null)
 
     const isListening = voiceStatus === 'listening'
 
@@ -58,6 +63,9 @@ function HeroSection() {
 
     useEffect(() => {
         return () => {
+            if (timerIntervalRef.current) {
+                clearInterval(timerIntervalRef.current)
+            }
             if (audioUrl) {
                 URL.revokeObjectURL(audioUrl)
             }
@@ -77,15 +85,44 @@ function HeroSection() {
     }, [audioUrl])
 
     const clearVoiceData = () => {
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current)
+            timerIntervalRef.current = null
+        }
         setTranscript('')
         setTypedFallback('')
         setErrorMessage('')
         setVoiceStatus('idle')
         setAudioBlob(null)
+        setRecordingTime(0)
+        setIsPlaying(false)
+        setRecordingQuality(0)
         if (audioUrl) {
             URL.revokeObjectURL(audioUrl)
             setAudioUrl('')
         }
+    }
+
+    const startTimer = () => {
+        if (timerIntervalRef.current) clearInterval(timerIntervalRef.current)
+        setRecordingTime(0)
+        timerIntervalRef.current = setInterval(() => {
+            setRecordingTime((prev) => prev + 1)
+            setRecordingQuality(Math.min(100, (prev + 1) * 8))
+        }, 1000)
+    }
+
+    const stopTimer = () => {
+        if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current)
+            timerIntervalRef.current = null
+        }
+    }
+
+    const formatTime = (seconds) => {
+        const mins = Math.floor(seconds / 60)
+        const secs = seconds % 60
+        return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
     }
 
     const getCurrentPositionSafe = async () => {
@@ -184,10 +221,12 @@ function HeroSection() {
         if (!dynamicSupport.hasMediaDevices && !dynamicSupport.hasSpeechRecognition) {
             setErrorMessage('Voice capture is not supported in this browser. Please use the typed note field.')
             setVoiceStatus('error')
+            toast.error('Voice capture not supported')
             return
         }
 
         setVoiceStatus('listening')
+        startTimer()
 
         if (dynamicSupport.hasSpeechRecognition) {
             const BrowserSpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -207,15 +246,19 @@ function HeroSection() {
 
             recognition.onerror = () => {
                 setErrorMessage('Speech-to-text is unavailable for this attempt. Audio recording can still continue.')
+                toast.warning('Speech-to-text error')
             }
 
             recognition.onend = () => {
+                stopTimer()
                 if (voiceStatusRef.current === 'processing') {
                     if (audioUrlRef.current || transcriptRef.current.trim()) {
                         setVoiceStatus('success')
+                        toast.success('Voice captured successfully!')
                     } else {
                         setErrorMessage('No clear speech was detected. Try again or type your safety note.')
                         setVoiceStatus('error')
+                        toast.warning('No speech detected')
                     }
                 }
             }
@@ -238,6 +281,7 @@ function HeroSection() {
                 }
 
                 recorder.onstop = () => {
+                    stopTimer()
                     if (streamRef.current) {
                         streamRef.current.getTracks().forEach((track) => track.stop())
                         streamRef.current = null
@@ -252,16 +296,20 @@ function HeroSection() {
                             return newUrl
                         })
                         setVoiceStatus('success')
+                        toast.success('Audio recorded successfully!')
                     } else if (!transcriptRef.current.trim()) {
                         setErrorMessage('No audio was captured. Check microphone access and try again.')
                         setVoiceStatus('error')
+                        toast.error('No audio captured')
                     }
                 }
 
                 recorder.start()
-            } catch {
+            } catch (err) {
+                stopTimer()
                 setErrorMessage('Microphone permission was denied or unavailable. Use typed note or retry after enabling mic.')
                 setVoiceStatus('error')
+                toast.error('Microphone access denied')
                 if (recognitionRef.current) {
                     recognitionRef.current.stop()
                 }
@@ -376,26 +424,50 @@ function HeroSection() {
                             <p className='text-slate-200 text-sm'>Real-time location sharing with your network</p>
                         </div>
 
-                        <div className='absolute -bottom-8 right-3 left-3 md:left-auto md:w-[26rem] theme-card-soft p-5 z-30 border border-cyan-200/30 backdrop-blur-md'>
-                            <div className='flex items-center justify-between gap-3 mb-3'>
+                        <div className='absolute -bottom-8 right-3 left-3 md:left-auto md:w-[28rem] theme-card-soft p-6 z-30 border border-purple-300/30 backdrop-blur-md shadow-2xl'>
+                            <div className='flex items-center justify-between gap-3 mb-4'>
                                 <div className='flex items-center gap-2'>
-                                    <AudioLines size={18} className='text-cyan-200' />
-                                    <p className='font-bold text-white'>Voice Safety Note</p>
+                                    <div className={`p-2 rounded-lg ${isListening ? 'bg-rose-500/30' : 'bg-purple-500/30'}`}>
+                                        <AudioLines size={20} className={isListening ? 'text-rose-300 animate-pulse' : 'text-purple-200'} />
+                                    </div>
+                                    <div>
+                                        <p className='font-bold text-white'>Voice Safety Note</p>
+                                        <p className='text-xs text-slate-300'>Quick voice capture with AI</p>
+                                    </div>
                                 </div>
-                                <span className={`text-xs font-semibold px-2 py-1 rounded-full ${isListening ? 'bg-rose-400/30 text-rose-100' : 'bg-cyan-400/20 text-cyan-100'}`} aria-live='polite'>
-                                    {VOICE_STATUS_LABEL[voiceStatus]}
-                                </span>
+                                {isListening && (
+                                    <div className='text-right'>
+                                        <p className='text-sm font-bold text-rose-300 font-mono'>{formatTime(recordingTime)}</p>
+                                        <p className='text-xs text-slate-400'>Recording</p>
+                                    </div>
+                                )}
                             </div>
 
-                            <div className='flex flex-wrap gap-2 mb-3'>
+                            {/* Recording Quality Indicator */}
+                            {isListening && (
+                                <div className='mb-3 p-2 bg-gradient-to-r from-purple-500/20 to-rose-500/20 rounded-lg'>
+                                    <div className='flex items-center justify-between mb-1'>
+                                        <span className='text-xs font-semibold text-purple-300'>Recording Quality</span>
+                                        <span className='text-xs text-slate-400'>{recordingQuality}%</span>
+                                    </div>
+                                    <div className='h-1.5 bg-slate-800 rounded-full overflow-hidden'>
+                                        <div 
+                                            className='h-full bg-gradient-to-r from-purple-500 to-rose-500 transition-all duration-300'
+                                            style={{ width: `${Math.min(recordingQuality, 100)}%` }}
+                                        ></div>
+                                    </div>
+                                </div>
+                            )}
+
+                            <div className='flex flex-wrap gap-1.5 mb-3'>
                                 <button
                                     type='button'
                                     onClick={startVoiceCapture}
                                     disabled={isListening || voiceStatus === 'processing' || isSubmittingSOS}
                                     aria-label='Start voice recording'
-                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-500 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-emerald-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-colors'
+                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-emerald-500 to-green-600 text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all'
                                 >
-                                    <Mic size={16} />
+                                    <Mic size={15} />
                                     Start
                                 </button>
                                 <button
@@ -403,9 +475,9 @@ function HeroSection() {
                                     onClick={stopVoiceCapture}
                                     disabled={!isListening || isSubmittingSOS}
                                     aria-label='Stop voice recording'
-                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-rose-500 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-rose-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-colors'
+                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-600 text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all'
                                 >
-                                    <Square size={14} />
+                                    <Square size={13} />
                                     Stop
                                 </button>
                                 <button
@@ -413,9 +485,9 @@ function HeroSection() {
                                     onClick={startVoiceCapture}
                                     disabled={isListening || isSubmittingSOS}
                                     aria-label='Retry voice recording'
-                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-cyan-600 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-cyan-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-colors'
+                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all'
                                 >
-                                    <RotateCcw size={14} />
+                                    <RotateCcw size={13} />
                                     Retry
                                 </button>
                                 <button
@@ -423,9 +495,9 @@ function HeroSection() {
                                     onClick={clearVoiceData}
                                     disabled={isSubmittingSOS}
                                     aria-label='Clear captured voice note'
-                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-white/10 border border-white/20 text-slate-100 text-sm font-semibold hover:bg-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-colors disabled:opacity-60'
+                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg border-2 border-slate-400 bg-slate-700/30 text-slate-100 text-xs font-bold hover:bg-slate-700/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all disabled:opacity-40'
                                 >
-                                    <Trash2 size={14} />
+                                    <Trash2 size={13} />
                                     Clear
                                 </button>
                                 <button
@@ -433,18 +505,25 @@ function HeroSection() {
                                     onClick={submitVoiceNoteToSOS}
                                     disabled={isListening || isSubmittingSOS}
                                     aria-label='Submit voice note with SOS alert'
-                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-orange-500 text-white text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-orange-400 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-colors'
+                                    className='inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-gradient-to-r from-orange-500 to-amber-600 text-white text-xs font-bold disabled:opacity-40 disabled:cursor-not-allowed hover:shadow-lg hover:scale-105 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white transition-all'
                                 >
-                                    {isSubmittingSOS ? 'Submitting...' : 'Send to SOS'}
+                                    {isSubmittingSOS ? '⏳ Sending...' : '📤 Send to SOS'}
                                 </button>
                             </div>
 
-                            <p className='text-xs text-slate-200 mb-2' role={errorMessage ? 'alert' : 'status'} aria-live='polite' aria-atomic='true'>
+                            {/* Status Message */}
+                            <div className={`text-xs font-semibold mb-3 px-2.5 py-1.5 rounded-lg text-center ${
+                                errorMessage ? 'bg-red-500/20 text-red-200' :
+                                voiceStatus === 'success' ? 'bg-green-500/20 text-green-200' :
+                                voiceStatus === 'listening' ? 'bg-blue-500/20 text-blue-200' :
+                                'bg-slate-700/30 text-slate-300'
+                            }`} role={errorMessage ? 'alert' : 'status'} aria-live='polite' aria-atomic='true'>
                                 {errorMessage || VOICE_STATUS_LABEL[voiceStatus]}
-                            </p>
+                            </div>
 
-                            <label htmlFor='voice-transcript' className='text-xs uppercase tracking-wide text-slate-300'>
-                                Transcript
+                            {/* Transcript */}
+                            <label htmlFor='voice-transcript' className='text-xs uppercase tracking-wider text-purple-300 font-bold'>
+                                📝 Transcript
                             </label>
                             <textarea
                                 id='voice-transcript'
@@ -454,33 +533,50 @@ function HeroSection() {
                                 className='w-full mt-1 mb-2 h-20 rounded-lg bg-slate-900/50 border border-white/20 text-slate-100 px-3 py-2 text-sm outline-none focus:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-200'
                             />
 
-                            <label htmlFor='typed-fallback' className='text-xs uppercase tracking-wide text-slate-300'>
-                                Typed Note Fallback
+                            <label htmlFor='typed-fallback' className='text-xs uppercase tracking-wider text-purple-300 font-bold mt-3 block'>
+                                ⌨️ Typed Note Fallback
                             </label>
                             <textarea
                                 id='typed-fallback'
                                 value={typedFallback}
                                 onChange={(event) => setTypedFallback(event.target.value)}
                                 placeholder='If microphone is unavailable, type a quick safety note here...'
-                                className='w-full mt-1 h-20 rounded-lg bg-slate-900/50 border border-white/20 text-slate-100 px-3 py-2 text-sm outline-none focus:border-cyan-300 focus-visible:ring-2 focus-visible:ring-cyan-200'
+                                className='w-full mt-1 h-16 rounded-lg bg-slate-900/60 border-2 border-slate-600 text-slate-100 px-3 py-2 text-sm outline-none focus:border-purple-400 focus:ring-2 focus:ring-purple-300/50 focus-visible:ring-2 focus-visible:ring-purple-200 transition-all'
                             />
 
                             {audioUrl && (
-                                <div className='mt-3'>
-                                    <p className='text-xs uppercase tracking-wide text-slate-300 mb-1'>Recorded Audio</p>
-                                    <audio controls src={audioUrl} className='w-full h-10' />
+                                <div className='mt-4 p-3 rounded-lg border-2 border-emerald-500/30 bg-emerald-500/10'>
+                                    <div className='flex items-center justify-between mb-2'>
+                                        <p className='text-xs uppercase tracking-wider text-emerald-300 font-bold'>🎵 Recorded Audio</p>
+                                        <button
+                                            type='button'
+                                            onClick={() => setIsPlaying(!isPlaying)}
+                                            className='px-2 py-1 text-xs font-bold rounded bg-emerald-600 hover:bg-emerald-500 text-white transition-colors'
+                                        >
+                                            {isPlaying ? '⏸ Pause' : '▶ Play'}
+                                        </button>
+                                    </div>
+                                    <audio 
+                                        ref={audioPlayRef}
+                                        src={audioUrl} 
+                                        onPlay={() => setIsPlaying(true)}
+                                        onPause={() => setIsPlaying(false)}
+                                        onEnded={() => setIsPlaying(false)}
+                                        className='w-full h-8 rounded' 
+                                        controls
+                                    />
                                 </div>
                             )}
 
-                            <div className='mt-3 text-[11px] text-slate-300 flex items-center gap-2'>
-                                <span className='inline-flex items-center gap-1'>
-                                    <span className={`w-2 h-2 rounded-full ${supportInfo.hasRecorder ? 'bg-emerald-400' : 'bg-amber-300'}`}></span>
-                                    Audio capture
-                                </span>
-                                <span className='inline-flex items-center gap-1'>
-                                    <span className={`w-2 h-2 rounded-full ${supportInfo.hasSpeechRecognition ? 'bg-emerald-400' : 'bg-amber-300'}`}></span>
-                                    Speech-to-text
-                                </span>
+                            <div className='mt-3 flex items-center gap-3 text-xs'>
+                                <div className='flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-700/40 border border-slate-600'>
+                                    <span className={`w-2 h-2 rounded-full ${supportInfo.hasRecorder ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                                    <span className='text-slate-300'>{supportInfo.hasRecorder ? 'Audio Ready' : 'Audio N/A'}</span>
+                                </div>
+                                <div className='flex items-center gap-1.5 px-2 py-1 rounded-lg bg-slate-700/40 border border-slate-600'>
+                                    <span className={`w-2 h-2 rounded-full ${supportInfo.hasSpeechRecognition ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`}></span>
+                                    <span className='text-slate-300'>{supportInfo.hasSpeechRecognition ? 'Speech Ready' : 'Speech N/A'}</span>
+                                </div>
                             </div>
                         </div>
 

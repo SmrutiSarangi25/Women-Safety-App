@@ -87,6 +87,9 @@ function Login() {
         }
     });
 
+    // Check if Google OAuth is configured
+    const isGoogleConfigured = Config.GoogleClientId && Config.GoogleClientId.length > 50;
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
             <div className="w-full max-w-md">
@@ -107,26 +110,38 @@ function Login() {
 
                 {/* Login Form */}
                 <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-xl shadow-lg p-8 space-y-6 slide-up">
-                    {/* Google Login Button */}
-                    <button
-                        type="button"
-                        disabled={isSubmitting}
-                        className="w-full flex items-center justify-center gap-3 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-gray-700"
-                        onClick={() => handleGoogleLogin()}
-                    >
-                        <img
-                            src="/google.jfif"
-                            alt="Google logo"
-                            className="w-5 h-5"
-                        />
-                        Continue with Google
-                    </button>
+                    {/* Google Login Button - Only show if configured */}
+                    {isGoogleConfigured && (
+                        <>
+                            <button
+                                type="button"
+                                disabled={isSubmitting}
+                                className="w-full flex items-center justify-center gap-3 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed font-semibold text-gray-700"
+                                onClick={() => handleGoogleLogin()}
+                            >
+                                <img
+                                    src="/google.jfif"
+                                    alt="Google logo"
+                                    className="w-5 h-5"
+                                />
+                                Continue with Google
+                            </button>
 
-                    <div className="relative flex py-3 items-center">
-                        <div className="flex-grow border-t border-gray-200"></div>
-                        <span className="flex-shrink mx-4 text-gray-400 text-sm">or email</span>
-                        <div className="flex-grow border-t border-gray-200"></div>
-                    </div>
+                            <div className="relative flex py-3 items-center">
+                                <div className="flex-grow border-t border-gray-200"></div>
+                                <span className="flex-shrink mx-4 text-gray-400 text-sm">or email</span>
+                                <div className="flex-grow border-t border-gray-200"></div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Startup Development Notice - Show when Google not configured */}
+                    {!isGoogleConfigured && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm">
+                            <p className="text-blue-900 font-medium">🚀 Startup Mode</p>
+                            <p className="text-blue-800 mt-1">Use email/password to test. Google OAuth will be added in Phase 2.</p>
+                        </div>
+                    )}
 
                     {/* Email Field */}
                     <div>

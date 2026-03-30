@@ -1,6 +1,7 @@
 import { BrowserRouter, Route, Routes } from "react-router-dom"
 import './App.css'
 import Navbar from './Components/Navbar'
+import Footer from './Components/Footer'
 import ProtectedRoute from "./Components/ProtectedRoute"
 import AdminProtectedRoute from "./Components/AdminProtectedRoute"
 import { lazy, Suspense } from "react"
@@ -107,6 +108,7 @@ function App() {
             </Routes>
           </Suspense>
         </main>
+        <Footer />
         <ToastContainer />
         <AIChatbot />
       </div>

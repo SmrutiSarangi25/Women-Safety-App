@@ -102,6 +102,9 @@ function Signup() {
         }
     });
 
+    // Check if Google OAuth is configured
+    const isGoogleConfigured = Config.GoogleClientId && Config.GoogleClientId.length > 50;
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50 p-4">
             <div className="w-full max-w-md">
@@ -114,33 +117,45 @@ function Signup() {
 
                 {/* Signup Form */}
                 <form onSubmit={handleSubmit(Submit)} className="bg-white rounded-xl shadow-lg p-8 space-y-6 slide-up">
-                    {/* Google Sign Up Button */}
-                    <button
-                        type="button"
-                        disabled={isLoading}
-                        className={`w-full flex items-center justify-center gap-3 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-primary transition-all duration-300 font-semibold text-gray-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
-                            }`}
-                        onClick={() => handleGoogleSignup()}
-                    >
-                        <img
-                            src="/google.jfif"
-                            alt="Google logo"
-                            className="w-5 h-5"
-                        />
-                        {isLoading ? 'Loading...' : 'Sign up with Google'}
-                    </button>
+                    {/* Google Sign Up Button - Only show if configured */}
+                    {isGoogleConfigured && (
+                        <>
+                            <button
+                                type="button"
+                                disabled={isLoading}
+                                className={`w-full flex items-center justify-center gap-3 py-3 border-2 border-gray-200 rounded-lg hover:bg-gray-50 hover:border-brand-primary transition-all duration-300 font-semibold text-gray-700 ${isLoading ? 'opacity-50 cursor-not-allowed' : ''
+                                    }`}
+                                onClick={() => handleGoogleSignup()}
+                            >
+                                <img
+                                    src="/google.jfif"
+                                    alt="Google logo"
+                                    className="w-5 h-5"
+                                />
+                                {isLoading ? 'Loading...' : 'Sign up with Google'}
+                            </button>
+
+                            <div className="relative flex py-5 items-center">
+                                <div className="flex-grow border-t border-gray-200"></div>
+                                <span className="flex-shrink mx-4 text-gray-400">or</span>
+                                <div className="flex-grow border-t border-gray-200"></div>
+                            </div>
+                        </>
+                    )}
+
+                    {/* Startup Development Notice - Show when Google not configured */}
+                    {!isGoogleConfigured && (
+                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 text-sm mb-4">
+                            <p className="text-blue-900 font-medium">🚀 Startup Mode</p>
+                            <p className="text-blue-800 mt-1">Use email/password to test. Google OAuth will be added in Phase 2.</p>
+                        </div>
+                    )}
 
                     {globalError && (
                         <div className="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-3 text-center">
                             {globalError}
                         </div>
                     )}
-
-                    <div className="relative flex py-5 items-center">
-                        <div className="flex-grow border-t border-gray-200"></div>
-                        <span className="flex-shrink mx-4 text-gray-400">or</span>
-                        <div className="flex-grow border-t border-gray-200"></div>
-                    </div>
 
                     <div className='w-full'>
                         <label htmlFor="userName" className="block text-sm font-semibold text-gray-700 mb-1">

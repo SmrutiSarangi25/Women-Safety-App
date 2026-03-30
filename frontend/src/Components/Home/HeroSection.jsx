@@ -108,7 +108,7 @@ function HeroSection() {
         setRecordingTime(0)
         timerIntervalRef.current = setInterval(() => {
             setRecordingTime((prev) => prev + 1)
-            setRecordingQuality(Math.min(100, (prev + 1) * 8))
+            setRecordingQuality((prev) => Math.min(100, prev + 8))
         }, 1000)
     }
 
